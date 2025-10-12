@@ -4,7 +4,7 @@ from time import sleep #importation de la fonction sleep depuis la librairie tim
 # --- Hardware setup ---
 pot = ADC(0)               # Potentiometer (volume)
 buzzer = PWM(Pin(27))      # Buzzer
-BP = Pin(18, Pin.IN, Pin.PULL_UP)  # Button with pull-up resistor
+BP = Pin(18, Pin.IN)       # Button 
 state = 0                  # 0: stop, 1: melody1, 2: melody2
 led = Pin(16, Pin.OUT)     # LED indicator
 
@@ -82,3 +82,4 @@ while True:
     else: # sinon pas de son 
         buzzer.duty_u16(0)
         sleep(0.1)
+

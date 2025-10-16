@@ -1,17 +1,15 @@
 from LCD1602 import LCD1602
-from machine import I2C,Pin
+from machine import I2C,Pin,ADC,PWM
 from utime import sleep
+
+ROTARY_ANGLE_SENSOR = ADC(0)
 i2c = I2C(1,scl=Pin(7), sda=Pin(6), freq=400000)
-d = LCD1602(i2c, 2, 16) # label data type, number of lines and characters per line 
+d = LCD1602(i2c, 2, 16)
+d.display()
 
-d.display() # enable display
-sleep(1)
-d.clear() # clear display
-d.print('Hello ') #display characters
-
-sleep(1)
-d.setCursor(0, 1) # set display position, row and column start from 0
-
-d.print('world ')
-
-# test de changement pour voir 
+while True:
+    sleep(1)
+    d.clear()
+    d.setCursor(0, 0)
+    d.print(str(ROTARY_ANGLE_SENSOR.read_u16()-272)) # PERMET D'AFFICHER LE 0 CORRECT
+    sleep(1)

@@ -11,4 +11,7 @@ d.print('Hello ') #display characters
 
 sleep(1)
 d.setCursor(0, 1) # set display position, row and column start from 0
+
 d.print('world ')
+
+# test de changement pour voir 

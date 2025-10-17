@@ -10,7 +10,7 @@ from utime import sleep 			#importation de la fonction sleep depuis la librairie
 '''---Hardware setup----'''
 pot = ADC(0)				#potentiometre raccorder sur ADC0 soit A0 sur la carte.
 led = PWM(Pin(20))			# led raccorder sur Pin 20 soit D20 sur la carte.
-led.freq(500)
+led.freq(1000)
 sensor = DHT11(Pin(18)) 	#Initialise le capteur DHT11 connecté sur D18 de la carte.
 buzzer = PWM(Pin(16))   	#Crée un signal PWM (modulation de largeur d’impulsion) sur la broche 16.
 
@@ -33,7 +33,46 @@ def led_dimmer():
         led.duty_u16(duty)
         sleep(delay)
     led.duty_u16(0)  # LED éteinte à la fin
+    
+    
+'''-----Clignotement sur le lcd------'''
+def lcd_blink(text, row=0, col=0, times=0, delay=0.2):
+    """
+    Fait clignoter un texte sur le LCD.
+    text : texte à afficher
+    row  : ligne (0 ou 1)
+    col  : colonne de départ
+    times: nombre de clignotements
+    delay: durée de chaque affichage (s)
+    """
+    for _ in range(times):
+        d.clear()
+        d.setCursor(col, row)
+        d.print(text)     # afficher le texte
+        sleep(delay)
+        d.setCursor(col, row)
+        d.print(" " * len(text))  # effacer le texte
+        sleep(delay)
 
+'''-----Defilement du Alarm sur lcd------'''
+def lcd_scroll(text, row=0, delay=0.3, repeat=0):
+    """
+    Fait défiler un texte sur une ligne du LCD.
+    text : texte à faire défiler
+    row  : ligne sur laquelle le texte défile
+    delay: pause entre chaque déplacement (s)
+    repeat: nombre de fois que le texte défile complètement
+    """
+    lcd_width = 16  # largeur de ton LCD
+    # ajouter des espaces à la fin pour un défilement propre
+    padded_text = text + " " * lcd_width
+    
+    for _ in range(repeat):
+        for i in range(len(padded_text) - lcd_width + 1):
+            d.clear()
+            d.setCursor(0, row)
+            d.print(padded_text[i:i + lcd_width])
+            sleep(delay)
 
 '''-----Main loop-----'''
 while True:
@@ -68,18 +107,23 @@ while True:
     #-----Deuxieme etat------
     elif diff < 3 :
         print("etat 2: ca chauffe un peu chef")
-        for _ in range(2):
+        for _ in range(1):
             led_dimmer()
+        # Défilement du mot ALARM
+        lcd_scroll("!!! ALARM !!!", row=0, delay=0.1, repeat=1)
         
     #-----Troisieme etat------ 
     else:
         print("etat 3: Au feu!!!!!")
         buzzer.freq(1000)	# buzzer sonne 
         buzzer.duty_u16(1000)
-        for _ in range(5):
+        for _ in range(2):
             led_dimmer()
+            #clignotement alarm
+            lcd_blink("ALARM", row=0, col=0, times=1, delay=0.2)
+        buzzer.duty_u16(0)
         d.clear()
         d.setCursor(0,0)
         d.print("ALARM")
-        
+    sleep(0.1)  # petite pause pour stabilité
     print("--------------------------------------------")

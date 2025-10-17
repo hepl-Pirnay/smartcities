@@ -9,7 +9,8 @@ from utime import sleep 			#importation de la fonction sleep depuis la librairie
 
 '''---Hardware setup----'''
 pot = ADC(0)				#potentiometre raccorder sur ADC0 soit A0 sur la carte.
-led = Pin(20,Pin.OUT)		# led raccorder sur Pin 20 soit D20 sur la carte.
+led = PWM(Pin(20))			# led raccorder sur Pin 20 soit D20 sur la carte.
+led.freq(500)
 sensor = DHT11(Pin(18)) 	#Initialise le capteur DHT11 connecté sur D18 de la carte.
 buzzer = PWM(Pin(16))   	#Crée un signal PWM (modulation de largeur d’impulsion) sur la broche 16.
 
@@ -18,6 +19,20 @@ i2c = I2C(1,scl=Pin(7), sda=Pin(6), freq=400000) # Initialise le bus I²C numér
 d = LCD1602(i2c, 2, 16) 						 #Crée un objet d pour piloter un écran LCD 16 colonnes × 2 lignes via I²C.
 d.display() 									 # active l’affichage (allume l’écran).
 
+'''------Definition de la fonction led_dimmer-----'''
+def led_dimmer(): 
+    # petite passe montée/descente rapide
+    step = 4000
+    delay = 0.005
+    # montée
+    for duty in range(0, 65535, step):
+        led.duty_u16(duty)
+        sleep(delay)
+    # descente
+    for duty in range(65535, 0, -step):
+        led.duty_u16(duty)
+        sleep(delay)
+    led.duty_u16(0)  # LED éteinte à la fin
 
 
 '''-----Main loop-----'''
@@ -53,20 +68,16 @@ while True:
     #-----Deuxieme etat------
     elif diff < 3 :
         print("etat 2: ca chauffe un peu chef")
-        led.value(1)   # allume la LED
-        sleep(1)       # attend 1 seconde
-        led.value(0)   # éteint la LED
-        sleep(1) 	   # attend 1 seconde
+        for _ in range(2):
+            led_dimmer()
         
-    #-----Troisieme etat------
+    #-----Troisieme etat------ 
     else:
         print("etat 3: Au feu!!!!!")
         buzzer.freq(1000)	# buzzer sonne 
         buzzer.duty_u16(1000)
-        led.value(1)  		# allume la LED
-        sleep(0.25)       	# attend 1 seconde
-        led.value(0)   		# éteint la LED
-        sleep(0.25)
+        for _ in range(5):
+            led_dimmer()
         d.clear()
         d.setCursor(0,0)
         d.print("ALARM")

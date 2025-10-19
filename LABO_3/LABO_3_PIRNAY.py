@@ -22,11 +22,11 @@ d.display() 									 # active l’affichage (allume l’écran).
 '''------Definition de la fonction led_dimmer-----'''
 def led_dimmer(): 
     # petite passe montée/descente rapide
-    step = 4000
-    delay = 0.005
+    step = 4000  # le pas entre chaque incrementation
+    delay = 0.005 # le delay d'attente ou le system ce met en pause 
     # montée
     for duty in range(0, 65535, step):
-        led.duty_u16(duty)
+        led.duty_u16(duty)  # envoye de la variable duty sur le led pwm
         sleep(delay)
     # descente
     for duty in range(65535, 0, -step):
@@ -46,8 +46,8 @@ def lcd_blink(text, row=0, col=0, times=0, delay=0.2):
     delay: durée de chaque affichage (s)
     """
     for _ in range(times):
-        d.clear()
-        d.setCursor(col, row)
+        d.clear()   # nettoye l'ecran lcd 
+        d.setCursor(col, row) # donne le depart d'affichage sur le lcd 
         d.print(text)     # afficher le texte
         sleep(delay)
         d.setCursor(col, row)
@@ -63,8 +63,8 @@ def lcd_scroll(text, row=0, delay=0.3, repeat=0):
     delay: pause entre chaque déplacement (s)
     repeat: nombre de fois que le texte défile complètement
     """
-    lcd_width = 16  # largeur de ton LCD
-    # ajouter des espaces à la fin pour un défilement propre
+    lcd_width = 16  # largeur de LCD
+    # ajoute des espaces à la fin pour un défilement propre
     padded_text = text + " " * lcd_width
     
     for _ in range(repeat):
@@ -80,7 +80,7 @@ while True:
     '''----Mapping du pot----'''
     val = pot.read_u16()  # lecture brute entre 0 et 65535
     valeur_consigne = 15 + (val * (35 - 15)/65535)  # mappe entre 15 et 35
-    print("Set", round(valeur_consigne, 1))
+    print("Set", round(valeur_consigne, 1)) # donne la valeur de set arrondie 
     sleep(0.5)
     
     '''----Lecture du capteur temperature-----'''

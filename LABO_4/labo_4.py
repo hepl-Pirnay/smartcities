@@ -23,16 +23,54 @@ WHITE = (255, 255, 255)
 COLORS = (RED, YELLOW, CYAN, BLUE, PURPLE, WHITE)
 
 
-# CALCUL  DU BRUIT MOYEN INITIAL
-MOYENNE = 0
-for i in range (1000):
-    noise = SOUND_SENSOR.read_u16()/256
-    MOYENNE += noise
-noise = MOYENNE/1000
+# ======CALCUL  DU BRUIT MOYEN INITIAL=====================
+def calcul_bruit_initial(n=1000):
+    total = 0
+    for i in range(n):
+        total += SOUND_SENSOR.read_u16()/256
+    return total / n
 
-print("Bruit moyen initial",noise)
+noise_initial = calcul_bruit_initial()
+print("Bruit moyen initial",noise_initial)
 
+#========= Fonction =============================
+def lire_son(mesures=100):
+    """Lecture moyenne du son sur 'x(mesures)' valeurs"""
+    total = 0
+    for _ in range(mesures):
+        total += SOUND_SENSOR.read_u16() / 256
+    return total / mesures
 
+def changer_couleur_led():
+    """Choisit une couleur aléatoire et met à jour la LED"""
+    couleur = random.choice(COLORS)
+    led.pixels_fill(couleur)
+    led.pixels_show()
+    print("Changement couleur:", couleur)
+    
+def calculer_bpm(current_time, last_time, bpm_list):
+    """Calcul du BPM instantané et ajout à la liste"""
+    interval = ticks_diff(current_time, last_time)
+    if interval > 0:
+        bpm = 60000 / interval
+        bpm_list.append(bpm)
+        print("BPM instantané:", round(bpm,1))
+    return bpm_list
+
+def enregistrer_bpm(bpm_list, fichier="bpm_log.txt"):
+    """Calcul de la moyenne BPM et écriture dans le fichier"""
+    if bpm_list:
+        avg_bpm = sum(bpm_list) / len(bpm_list)
+        print("Moyenne BPM sur 1 min:", round(avg_bpm,1))
+        try:
+            with open(fichier, "a") as f:
+                f.write(f"{round(avg_bpm,1)} BPM\n")
+                print("Écriture réussie dans", fichier)
+        except Exception as e:
+            print("Erreur écriture fichier:", e)
+    bpm_list.clear()  # réinitialiser la liste après écriture
+
+#==========Variables===================
 last_beat_time = ticks_ms()
 minute_start = ticks_ms()
 bpm_list = [] # creation de list pour stocker les BPM
@@ -41,57 +79,25 @@ bpm_list = [] # creation de list pour stocker les BPM
 # ===== Boucle Principal========
 while True:
     
-    # Lecture du son (amplitude): moyenne sur 100 mesures  
-    moyenne = 0
-    for i in range (100):
-        noise_2 = SOUND_SENSOR.read_u16()/256
-        moyenne += noise_2
-    noise_2 = moyenne/100
-    
-    print("bruit actuel:",noise_2)
-    
+    current_noise = lire_son()
+    print("Bruit actuel:", current_noise)
+        
     current_time = ticks_ms()
     
     # Détection d’un pic sonore
-    if noise_2 < noise and (current_time - last_beat_time) > 500:
+    if current_noise < noise_initial and ticks_diff(current_time,last_beat_time) > 500:
+        print("Pic sonore detecté")
+        changer_couleur_led()
+        bpm_list = calculer_bpm(current_time,last_beat_time,bpm_list)
+        last_beat_time = current_time 
         
-        #===== CHANGEMENT DE COULEUR======
-        print("etat changement led")
-        random_color = random.choice(COLORS)
-        print("color",(random_color))
-        led.pixels_fill(random_color)
-        led.pixels_show()
-        
-        
-        #calcul du bpm
-        interval = ticks_diff(current_time,last_beat_time)
-        Bpm = 60000 / interval
-        print("BPM instantané", round(Bpm,1))
-        
-        bpm_list.append(Bpm)  # ajouter le BPM à la liste pour moyenne
-        
-        
-        
-        last_beat_time = current_time # mise a jour du dernier battement
         
         # Calcul de la moyenne BPM toutes les 60 secondes
     if ticks_diff(current_time, minute_start) >= 60000:
-        if bpm_list:  # éviter division par zéro
-            avg_bpm = sum(bpm_list) / len(bpm_list)
-            print("Moyenne BPM sur 1 min:", round(avg_bpm,1))
-            
-            # Écriture dans un fichier texte sur le Pico
-            try:
-                with open("bpm_log.txt", "a") as f:
-                    f.write(f"{round(avg_bpm,1)} BPM\n")
-                    print("ecriture reussie")
-                    sleep(5)
-            except Exception as e:
-                print("Erreur écriture fichier:", e)
-        
-        # Réinitialiser la liste et le timer
-        bpm_list = []
+        enregistrer_bpm(bpm_list)
+        sleep(5)
         minute_start = current_time
+        
         
     sleep(0.01)  # lecture rapide, sans bloquer
 
